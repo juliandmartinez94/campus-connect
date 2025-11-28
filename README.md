@@ -1,16 +1,65 @@
-# React + Vite
+# 🚀 CampusConnect
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+CampusConnect is a collaborative platform for university students working on group projects.  
+It provides a clean, modern interface with features such as shared tasks, project chat, file management, and a team calendar — all built using **React**, **Vite**, and **Tailwind CSS**.
 
-Currently, two official plugins are available:
+This project is part of a Software Engineering course and demonstrates a full front-end group collaboration tool.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## 🌟 Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- 🔐 **Login Page**  
+  Simulated login screen with animated UI and branding.
 
-## Expanding the ESLint configuration
+- 🏠 **Dashboard**  
+  View all your classes, each with its own group projects.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- 👥 **Project Workspace**  
+  When selecting a project, users access multiple collaboration tools:
+  - **Tasks**: Add, view, and organize project tasks.
+  - **Chat**: Simple threaded team messaging UI.
+  - **Files**: Upload/download placeholder with version tracking UI.
+  - **Calendar**: View project events and meeting times.
+
+- 🔔 **Notifications**  
+  Clean pop-up notification feed for tasks, messages, and file uploads.
+
+- 🎨 **Modern UI**  
+  Built with Tailwind CSS for a smooth, professional aesthetic.
+
+---
+
+# 📦 Installation & Running the App
+
+Follow these steps to run CampusConnect locally.
+
+---
+
+## 1️⃣ Clone the Repository
+
+Open a terminal and run:
+git clone https://github.com/juliandmartinez94/campus-connect.git
+Then move into the project folder:
+cd campus-connect-app
+
+🔧 2. Install Dependencies
+
+Make sure you have Node.js installed (LTS recommended).
+Download here if needed: https://nodejs.org/
+
+Install all project dependencies:
+npm install
+This downloads everything needed to run the React + Vite + Tailwind setup.
+
+▶️ 3. Start the Development Server
+Run: 
+npm run dev
+Vite will start the dev server and show something like:
+Local:   http://localhost:5173/
+
+🌐 4. Open the App in Your Browser
+Open the URL printed in the terminal:
+http://localhost:5173/
+
+You should now see the CampusConnect login screen and be able to navigate through the full UI.
