@@ -75,6 +75,7 @@ export default function CampusConnect() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [data, setData] = useState(initialData);
   const [newMessage, setNewMessage] = useState('');
+  const [replyTo, setReplyTo] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [newTaskForm, setNewTaskForm] = useState({ title: '', assignedTo: '', dueDate: '', description: '' });
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
@@ -103,6 +104,95 @@ export default function CampusConnect() {
     setCurrentView('project');
   };
 
+   // Build a tree of messages (parent → children) for the selected project
+  const getThreadTreeForProject = () => {
+    if (!selectedProject) return { tree: {}, rootIds: [] };
+
+    const projectMessages = data.messages
+      .filter((m) => m.projectId === selectedProject.id)
+      .sort((a, b) => a.id - b.id);
+
+    const childrenByParent = {};
+    const rootIds = [];
+
+    projectMessages.forEach((msg) => {
+      const parentKey = msg.threadId ?? 'root';
+
+      if (parentKey === 'root') {
+        rootIds.push(msg.id);
+      } else {
+        if (!childrenByParent[parentKey]) {
+          childrenByParent[parentKey] = [];
+        }
+        childrenByParent[parentKey].push(msg.id);
+      }
+    });
+
+    // Also keep a lookup from id → message
+    const byId = {};
+    projectMessages.forEach((msg) => {
+      byId[msg.id] = msg;
+    });
+
+    return { tree: childrenByParent, rootIds, byId };
+  };
+
+  // Recursively render a message and its children as a nested thread
+  const renderThreadMessages = (messageId, level, threadData) => {
+    const { tree, byId } = threadData;
+    const msg = byId[messageId];
+    if (!msg) return null;
+
+    const children = tree[messageId] || [];
+
+    return (
+      <div key={msg.id} className={level === 0 ? 'space-y-2' : 'ml-8 space-y-2'}>
+        <div>
+          <div className="flex items-start space-x-3">
+            <div className={`rounded-full flex items-center justify-center font-semibold ${
+              level === 0
+                ? 'bg-indigo-600 text-white w-8 h-8 text-sm'
+                : 'bg-indigo-500 text-white w-7 h-7 text-xs'
+            }`}>
+              {msg.author
+                .split(' ')
+                .map((n) => n[0])
+                .join('')}
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <span className={level === 0 ? 'font-semibold text-sm' : 'font-semibold text-xs'}>
+                  {msg.author}
+                </span>
+                <span className={level === 0 ? 'text-xs text-gray-500' : 'text-[11px] text-gray-500'}>
+                  {msg.timestamp}
+                </span>
+              </div>
+              <p className={`mt-1 text-gray-800 ${level === 0 ? '' : 'text-sm'}`}>
+                {msg.content}
+              </p>
+              <button
+                type="button"
+                onClick={() => setReplyTo(msg)}
+                className={`mt-1 text-indigo-600 hover:text-indigo-800 hover:underline ${
+                  level === 0 ? 'text-xs' : 'text-[11px]'
+                }`}
+              >
+                Reply
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Render children (replies) */}
+        {children.map((childId) =>
+          renderThreadMessages(childId, level + 1, threadData)
+        )}
+      </div>
+    );
+  };
+
+
     const handleSendMessage = () => {
     if (newMessage.trim() && selectedProject) {
       const newMsg = {
@@ -118,12 +208,19 @@ export default function CampusConnect() {
           minute: '2-digit',
           hour12: false
         }),
-        threadId: null
+        // 👇 reply to *exactly* what we selected, or top-level if null
+        threadId: replyTo ? replyTo.id : null
       };
-      setData({ ...data, messages: [...data.messages, newMsg] });
-      setNewMessage('');
 
-      // 🔔 System notification for new message
+      setData({
+        ...data,
+        messages: [...data.messages, newMsg]
+      });
+
+      setNewMessage('');
+      setReplyTo(null);
+
+      // 🔔 keep notification behavior
       addNotification(
         'message',
         `New message in "${selectedProject.name}" from ${data.user.name}`
@@ -520,26 +617,35 @@ export default function CampusConnect() {
             {projectTab === 'chat' && (
               <div className="bg-white rounded-lg shadow">
                 <div className="h-96 overflow-y-auto p-6 space-y-4">
-                  {data.messages
-                    .filter(m => m.projectId === selectedProject.id)
-                    .map(msg => (
-                      <div key={msg.id} className={msg.threadId ? 'ml-8' : ''}>
-                        <div className="flex items-start space-x-3">
-                          <div className="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-semibold">
-                            {msg.author.split(' ').map(n => n[0]).join('')}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                              <span className="font-semibold text-sm">{msg.author}</span>
-                              <span className="text-xs text-gray-500">{msg.timestamp}</span>
-                            </div>
-                            <p className="mt-1 text-gray-800">{msg.content}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                  {(() => {
+  const threadData = getThreadTreeForProject();
+  return threadData.rootIds.map((rootId) =>
+    renderThreadMessages(rootId, 0, threadData)
+  );
+})()}
                 </div>
                 <div className="border-t p-4">
+                  {replyTo && (
+        <div className="mb-2 flex items-center justify-between rounded-md bg-indigo-50 px-3 py-2 text-xs text-indigo-900">
+          <div className="pr-2">
+            <span className="font-semibold">
+              Replying to {replyTo.author}:{' '}
+            </span>
+            <span className="italic">
+              {replyTo.content.length > 60
+                ? replyTo.content.slice(0, 60) + '…'
+                : replyTo.content}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setReplyTo(null)}
+            className="ml-2 text-[11px] font-semibold text-indigo-700 hover:underline"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
                   <div className="flex space-x-2">
                     <input
                       type="text"
