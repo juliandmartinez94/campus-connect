@@ -103,7 +103,7 @@ export default function CampusConnect() {
     setCurrentView('project');
   };
 
-  const handleSendMessage = () => {
+    const handleSendMessage = () => {
     if (newMessage.trim() && selectedProject) {
       const newMsg = {
         id: data.messages.length + 1,
@@ -122,10 +122,17 @@ export default function CampusConnect() {
       };
       setData({ ...data, messages: [...data.messages, newMsg] });
       setNewMessage('');
+
+      // 🔔 System notification for new message
+      addNotification(
+        'message',
+        `New message in "${selectedProject.name}" from ${data.user.name}`
+      );
     }
   };
 
-  const handleCreateTask = () => {
+
+    const handleCreateTask = () => {
     if (newTaskForm.title && selectedProject) {
       const newTask = {
         id: data.tasks.length + 1,
@@ -139,8 +146,15 @@ export default function CampusConnect() {
       setData({ ...data, tasks: [...data.tasks, newTask] });
       setNewTaskForm({ title: '', assignedTo: '', dueDate: '', description: '' });
       setShowNewTaskForm(false);
+
+      // 🔔 System notification for new task
+      addNotification(
+        'task',
+        `New task created in "${selectedProject.name}": ${newTask.title}`
+      );
     }
   };
+
 
   const markNotificationRead = (id) => {
     setData({
@@ -152,6 +166,42 @@ export default function CampusConnect() {
   };
 
   const unreadCount = data.notifications.filter(n => !n.read).length;
+     
+  // Mark all notifications as read
+  const markAllNotificationsRead = () => {
+    setData(prevData => ({
+      ...prevData,
+      notifications: prevData.notifications.map(n =>
+        n.read ? n : { ...n, read: true }
+      )
+    }));
+  };
+
+  // Generic helper to create a new notification
+  const addNotification = (type, message) => {
+    const now = new Date().toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
+    setData(prevData => ({
+      ...prevData,
+      notifications: [
+        {
+          id: prevData.notifications.length + 1,
+          type,
+          message,
+          read: false,
+          timestamp: now
+        },
+        ...prevData.notifications
+      ]
+    }));
+  };
 
   if (!isLoggedIn) {
     return (
@@ -224,9 +274,26 @@ export default function CampusConnect() {
               </button>
               {showNotifications && (
                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl text-gray-800 z-50">
-                  <div className="p-4 border-b">
-                    <h3 className="font-semibold">Notifications</h3>
-                  </div>
+                      <div className="p-4 border-b flex items-center justify-between">
+      <div>
+        <h3 className="font-semibold">Notifications</h3>
+        <p className="text-xs text-gray-500">
+          {unreadCount > 0
+            ? `${unreadCount} unread`
+            : 'All caught up'}
+        </p>
+      </div>
+      {unreadCount > 0 && (
+        <button
+          type="button"
+          onClick={markAllNotificationsRead}
+          className="text-xs text-indigo-600 hover:underline"
+        >
+          Mark all as read
+        </button>
+      )}
+    </div>
+
                   <div className="max-h-96 overflow-y-auto">
                     {data.notifications.map(notif => (
                       <div
@@ -498,9 +565,21 @@ export default function CampusConnect() {
               <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-xl font-semibold">Files</h3>
-                  <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center">
-                    <Upload size={16} className="mr-2" /> Upload File
-                  </button>
+                  <button
+  className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center"
+  onClick={() => {
+    // 🔔 System notification for file upload (demo)
+    if (selectedProject) {
+      addNotification(
+        'file',
+        `A new file was uploaded to "${selectedProject.name}" (demo event)`
+      );
+    }
+  }}
+>
+  <Upload size={16} className="mr-2" /> Upload File
+</button>
+
                 </div>
                 <div className="space-y-3">
                   {data.files
@@ -532,6 +611,21 @@ export default function CampusConnect() {
             {projectTab === 'calendar' && (
               <div className="bg-white rounded-lg shadow p-6">
                 <h3 className="text-xl font-semibold mb-6">Shared Calendar</h3>
+                    <button
+      className="mb-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm"
+      onClick={() => {
+        if (selectedProject) {
+          // 🔔 System notification for calendar update (demo)
+          addNotification(
+            'calendar',
+            `Calendar updated for "${selectedProject.name}" (demo event)`
+          );
+        }
+      }}
+    >
+      Simulate Calendar Update
+    </button>
+
                 <div className="space-y-4">
                   {data.events
                     .filter(e => e.projectId === selectedProject.id)
